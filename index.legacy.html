@@ -1,0 +1,1084 @@
+<!doctype html>
+<!-- Legacy single-file build (kept for reference). Use index.html instead. -->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>圈地可视化预览（3×3 起始）</title>
+  <style>
+    :root{
+      --cell: 18px;
+      --gap: 2px;
+      --bg: #0f1115;
+      --panel: #161a22;
+      --panel2:#111521;
+      --text: #e6e6e6;
+      --muted:#a8b0c0;
+      --border:#2a3140;
+      --ok:#2ecc71;
+      --ok2:#27ae60;
+      --warn:#f39c12;
+      --bad:#e74c3c;
+      --avail:#3b82f6;
+    }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .app{
+      display:grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 12px;
+      padding: 12px;
+      height: 100vh;
+      box-sizing:border-box;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:10px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+    .card .hdr{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    }
+    .title{
+      font-weight:600;
+      font-size:14px;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    button, select, input[type="checkbox"] + label{
+      font:inherit;
+      font-size:12px;
+    }
+    button{
+      background:var(--panel2);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:7px 10px;
+      cursor:pointer;
+    }
+    button:hover{ border-color:#3a455c; }
+    button.primary{ border-color: rgba(59,130,246,0.55); }
+    button.danger{ border-color: rgba(231,76,60,0.55); }
+    button:disabled{
+      opacity:0.55;
+      cursor:not-allowed;
+    }
+    input[type="number"]{
+      background:var(--panel2);
+      color:var(--text);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:6px 8px;
+      height: 30px;
+      box-sizing:border-box;
+    }
+    .content{
+      padding: 12px;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .gridWrap{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-height:0;
+      flex:1;
+    }
+    .grid{
+      background:#0b0d12;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding: 10px;
+      overflow:auto;
+      flex:1;
+      min-height:0;
+    }
+    .gridInner{
+      display:grid;
+      gap: var(--gap);
+      width: max-content;
+      user-select:none;
+    }
+    .cell{
+      width:var(--cell);
+      height:var(--cell);
+      border-radius:4px;
+      background:#222838;
+      border:1px solid #1a1f2c;
+      box-sizing:border-box;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:10px;
+      color:#cbd5e1;
+    }
+    .cell.claimed{
+      background:rgba(46,204,113,0.25);
+      border-color: rgba(46,204,113,0.65);
+    }
+    .cell.available{
+      background:rgba(59,130,246,0.18);
+      border-color: rgba(59,130,246,0.65);
+    }
+    .cell.blocked{
+      background:rgba(231,76,60,0.14);
+      border-color: rgba(231,76,60,0.55);
+    }
+    .cell:hover{
+      outline:2px solid rgba(255,255,255,0.12);
+      outline-offset:1px;
+    }
+    .legend{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      color:var(--muted);
+      font-size:12px;
+      align-items:center;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;border:1px solid var(--border);
+    }
+    .dot.ok{ background:rgba(46,204,113,0.25); border-color:rgba(46,204,113,0.65);}
+    .dot.av{ background:rgba(59,130,246,0.18); border-color:rgba(59,130,246,0.65);}
+    .dot.bd{ background:rgba(231,76,60,0.14); border-color:rgba(231,76,60,0.55);}
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap:8px;
+    }
+    .stat{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      min-width:0;
+    }
+    .stat .k{ color:var(--muted); font-size:11px; }
+    .stat .v{ font-size:13px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .editor{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    textarea{
+      width:100%;
+      flex:1;
+      min-height:0;
+      resize:none;
+      background:#0b0d12;
+      color:#e5e7eb;
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      box-sizing:border-box;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:12px;
+      line-height:1.45;
+      tab-size: 2;
+      -moz-tab-size: 2;
+    }
+    .msg{
+      font-size:12px;
+      color:var(--muted);
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:8px 10px;
+      white-space:pre-wrap;
+      min-height: 40px;
+    }
+    .tog{
+      display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;
+    }
+    input[type="checkbox"]{ transform: translateY(1px); }
+    @media (max-width: 1000px){
+      .app{ grid-template-columns: 1fr; height:auto; }
+      .card{ height: calc(100vh - 24px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 左：可视化 -->
+    <div class="card">
+      <div class="hdr">
+        <div>
+          <div class="title">领地圈地预览</div>
+          <div class="sub">初始 3×3；点击蓝色“可圈地”区块进行扩张；红色表示被逻辑阻止</div>
+        </div>
+        <div class="row">
+          <button id="resetBtn" class="primary">恢复初始 3×3</button>
+          <button id="clearBtn" class="danger">清空全部</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="row">
+          <div class="tog">
+            <input id="showCoord" type="checkbox" />
+            <label for="showCoord">显示坐标</label>
+          </div>
+          <div class="tog">
+            <input id="autoAvail" type="checkbox" checked />
+            <label for="autoAvail">只允许点击“可圈地”(邻接)区块</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleTwoAdj" type="checkbox" />
+            <label for="ruleTwoAdj">扩张需≥2邻接</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleArm" type="checkbox" checked />
+            <label for="ruleArm">限制长臂</label>
+            <span class="sub">L=</span>
+            <input id="armLen" type="number" min="1" max="50" step="1" value="6" style="width:64px" />
+          </div>
+
+          <div class="tog">
+            <input id="rulePA" type="checkbox" />
+            <label for="rulePA">限制 周长/面积</label>
+            <span class="sub">≤</span>
+            <input id="paMax" type="number" min="0.1" max="99" step="0.1" value="3.5" style="width:72px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleEnds" type="checkbox" />
+            <label for="ruleEnds">限制端点数</label>
+            <span class="sub">≤</span>
+            <input id="endsMax" type="number" min="1" max="9999" step="1" value="64" style="width:72px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleHoles" type="checkbox" />
+            <label for="ruleHoles">禁止空心圈地</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleOuterFill" type="checkbox" />
+            <label for="ruleOuterFill">限制外接方填充率</label>
+            <span class="sub">≥</span>
+            <input id="outerFillMin" type="number" min="0" max="1" step="0.01" value="0.65" style="width:76px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleInnerShare" type="checkbox" />
+            <label for="ruleInnerShare">限制最大内接方占比</label>
+            <span class="sub">≥</span>
+            <input id="innerShareMin" type="number" min="0" max="1" step="0.01" value="0.20" style="width:76px" />
+          </div>
+
+          <div style="flex:1"></div>
+          <div class="sub">视窗大小：</div>
+          <select id="sizeSel">
+            <option value="21">21×21</option>
+            <option value="31" selected>31×31</option>
+            <option value="41">41×41</option>
+            <option value="61">61×61</option>
+          </select>
+        </div>
+
+        <div class="legend">
+          <span><span class="dot ok"></span>已圈地</span>
+          <span><span class="dot av"></span>可圈地（邻接）</span>
+          <span><span class="dot bd"></span>被逻辑阻止</span>
+          <span class="sub">（滚动查看大视窗；坐标中心为 (0,0)）</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">面积 A（chunks）</div><div class="v" id="stArea">-</div></div>
+          <div class="stat"><div class="k">边界周长 P（边数）</div><div class="v" id="stPerim">-</div></div>
+          <div class="stat"><div class="k">P/A</div><div class="v" id="stPA">-</div></div>
+          <div class="stat"><div class="k">直径 D（4邻接近似）</div><div class="v" id="stDiam">-</div></div>
+          <div class="stat"><div class="k">外接方填充 A/L²</div><div class="v" id="stOuterFill">-</div></div>
+          <div class="stat"><div class="k">内接方占比 Lin²/A</div><div class="v" id="stInnerShare">-</div></div>
+        </div>
+
+        <div class="gridWrap">
+          <div class="grid" id="gridScroll">
+            <div class="gridInner" id="grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：逻辑编辑器 -->
+    <div class="card">
+      <div class="hdr">
+        <div>
+          <div class="title">JS 逻辑编辑器</div>
+          <div class="sub">写一个 canClaim(state, cell) → true/false；点击“应用逻辑”生效</div>
+        </div>
+        <div class="row">
+          <button id="applyBtn" class="primary">应用逻辑</button>
+          <button id="resetLogicBtn">重置为默认逻辑</button>
+          <button id="popBtn">弹出编辑器窗口</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="editor">
+          <textarea id="code"></textarea>
+          <div class="msg" id="msg">提示：默认逻辑 = 必须与已有领地 4 邻接才能圈地；可用上方开关限制“长臂/细长扩张”。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /********************
+     * 数据结构与工具
+     ********************/
+    const key = (x,z) => `${x},${z}`;
+    const parseKey = (k) => {
+      const [x,z] = k.split(",").map(Number);
+      return {x,z};
+    };
+
+    function neighbors4(x,z){
+      return [{x:x+1,z},{x:x-1,z},{x,z:z+1},{x,z:z-1}];
+    }
+    function neighbors8(x,z){
+      const out=[];
+      for (let dx=-1; dx<=1; dx++){
+        for (let dz=-1; dz<=1; dz++){
+          if (dx===0 && dz===0) continue;
+          out.push({x:x+dx,z:z+dz});
+        }
+      }
+      return out;
+    }
+
+    function perimeterEdges(claimedSet){
+      // 周长 = 所有已圈地 chunk 的四边里，与未圈地相邻的边数
+      let p = 0;
+      for (const k0 of claimedSet){
+        const {x,z} = parseKey(k0);
+        for (const n of neighbors4(x,z)){
+          if (!claimedSet.has(key(n.x,n.z))) p++;
+        }
+      }
+      return p;
+    }
+
+    // 近似直径：两次 BFS（4 邻接图）
+    function approxDiameter4(claimedSet){
+      if (claimedSet.size === 0) return 0;
+
+      const startKey = claimedSet.values().next().value;
+
+      const bfs = (srcKey) => {
+        const q = [srcKey];
+        const dist = new Map([[srcKey, 0]]);
+        let farKey = srcKey;
+        while (q.length){
+          const cur = q.shift();
+          const d = dist.get(cur);
+          farKey = cur;
+          const {x,z} = parseKey(cur);
+          for (const n of neighbors4(x,z)){
+            const nk = key(n.x,n.z);
+            if (!claimedSet.has(nk) || dist.has(nk)) continue;
+            dist.set(nk, d+1);
+            q.push(nk);
+          }
+        }
+        // 取 dist 最大
+        let maxD = 0;
+        for (const [k1,d] of dist){
+          if (d >= maxD){
+            maxD = d;
+            farKey = k1;
+          }
+        }
+        return {farKey, maxD};
+      };
+
+      const a = bfs(startKey);
+      const b = bfs(a.farKey);
+      return b.maxD;
+    }
+
+    /********************
+     * 状态与默认逻辑
+     ********************/
+    const state = {
+      claimed: new Set(),     // Set<string> of "x,z"
+      blocked: new Set(),     // 仅用于当前渲染显示：哪些格子被逻辑拒绝
+      viewSize: 31,
+      options: {
+        showCoord: false,
+        autoAvailOnly: true
+      },
+      rules: {
+        requireTwoAdj: false,
+        limitArm: true,
+        maxArmLen: 6,
+        limitPA: false,
+        maxPA: 3.5,
+        limitEndpoints: false,
+        maxEndpoints: 64,
+        forbidHoles: false,
+        limitOuterFill: false,
+        minOuterFill: 0.65,
+        limitInnerShare: false,
+        minInnerShare: 0.2
+      },
+      metrics: {
+        area: 0,
+        perim: 0,
+        endpoints: 0,
+        bounds: null,
+        outerFill: 0,
+        innerShare: 0,
+        maxFilledSquare: 0
+      }
+    };
+
+    function computeBounds(claimedSet){
+      if (claimedSet.size === 0) return null;
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const k0 of claimedSet){
+        const {x,z} = parseKey(k0);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+      const w = (maxX - minX + 1);
+      const h = (maxZ - minZ + 1);
+      const L = Math.max(w, h);
+      return {minX, maxX, minZ, maxZ, w, h, L};
+    }
+
+    function updateBoundsWithCell(bounds, x, z){
+      if (!bounds){
+        return {minX:x, maxX:x, minZ:z, maxZ:z, w:1, h:1, L:1};
+      }
+      const minX = Math.min(bounds.minX, x);
+      const maxX = Math.max(bounds.maxX, x);
+      const minZ = Math.min(bounds.minZ, z);
+      const maxZ = Math.max(bounds.maxZ, z);
+      const w = (maxX - minX + 1);
+      const h = (maxZ - minZ + 1);
+      const L = Math.max(w, h);
+      return {minX, maxX, minZ, maxZ, w, h, L};
+    }
+
+    function maxFilledSquareSide(claimedSet, bounds){
+      // 轴对齐、完全被 claimed 填满的最大正方形边长 Lin
+      if (!bounds || claimedSet.size === 0) return 0;
+      const w = bounds.w, h = bounds.h;
+      if (w <= 0 || h <= 0) return 0;
+
+      const dp = new Int32Array(w + 1);
+      let maxS = 0;
+      for (let z = bounds.minZ; z <= bounds.maxZ; z++){
+        let prevDiag = 0;
+        for (let xi = 1; xi <= w; xi++){
+          const x = bounds.minX + (xi - 1);
+          const tmp = dp[xi];
+          if (claimedSet.has(key(x, z))){
+            const v = 1 + Math.min(dp[xi], dp[xi - 1], prevDiag);
+            dp[xi] = v;
+            if (v > maxS) maxS = v;
+          }else{
+            dp[xi] = 0;
+          }
+          prevDiag = tmp;
+        }
+      }
+      return maxS;
+    }
+
+    function countClaimedNeighbors4(claimedSet, x, z){
+      let c = 0;
+      for (const n of neighbors4(x,z)){
+        if (claimedSet.has(key(n.x,n.z))) c++;
+      }
+      return c;
+    }
+
+    function countEndpoints4(claimedSet){
+      let count = 0;
+      for (const k0 of claimedSet){
+        const {x,z} = parseKey(k0);
+        const deg = countClaimedNeighbors4(claimedSet, x, z);
+        if (deg === 1) count++;
+      }
+      return count;
+    }
+
+    function armLengthFromEndpoint4(claimedSet, startKey){
+      // 端点链长度（边数）：从端点沿着 degree=2 的“细臂”走到分叉/团块为止
+      const visited = new Set();
+      let curKey = startKey;
+      let prevKey = null;
+      let len = 0;
+      while (true){
+        if (visited.has(curKey)) break;
+        visited.add(curKey);
+
+        const {x,z} = parseKey(curKey);
+        const neigh = neighbors4(x,z)
+          .map(n => key(n.x,n.z))
+          .filter(k1 => claimedSet.has(k1) && k1 !== prevKey);
+
+        // 端点：没有下一个；分叉/团块：>1 个下一个；或者当前不是细臂（degree!=2）都停止
+        const deg = countClaimedNeighbors4(claimedSet, x, z);
+        if (deg !== 2 && curKey !== startKey) break;
+        if (neigh.length !== 1) break;
+
+        prevKey = curKey;
+        curKey = neigh[0];
+        len++;
+      }
+      return len;
+    }
+
+    function hasHoles4(claimedSet){
+      // 判定是否存在“空心/洞”：4 邻接下，未圈地格子被圈地完全包围而与外部不连通。
+      if (claimedSet.size === 0) return false;
+
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const k0 of claimedSet){
+        const {x,z} = parseKey(k0);
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+
+      // 外围扩一圈，保证“外部”一定落在边界上且不被 claimed 占用
+      minX -= 1; maxX += 1; minZ -= 1; maxZ += 1;
+
+      const inBounds = (x,z) => x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+      const visited = new Set();
+      const q = [];
+
+      const tryPush = (x,z) => {
+        if (!inBounds(x,z)) return;
+        const k0 = key(x,z);
+        if (claimedSet.has(k0) || visited.has(k0)) return;
+        visited.add(k0);
+        q.push({x,z});
+      };
+
+      // 从边界所有“外部空气”开始 flood fill
+      for (let x=minX; x<=maxX; x++){
+        tryPush(x, minZ);
+        tryPush(x, maxZ);
+      }
+      for (let z=minZ; z<=maxZ; z++){
+        tryPush(minX, z);
+        tryPush(maxX, z);
+      }
+
+      while (q.length){
+        const cur = q.shift();
+        for (const n of neighbors4(cur.x, cur.z)){
+          tryPush(n.x, n.z);
+        }
+      }
+
+      // 若存在未圈地格子没被访问到，则为“洞”
+      for (let x=minX; x<=maxX; x++){
+        for (let z=minZ; z<=maxZ; z++){
+          const k0 = key(x,z);
+          if (claimedSet.has(k0)) continue;
+          if (!visited.has(k0)) return true;
+        }
+      }
+      return false;
+    }
+
+    // 默认 canClaim：必须与已圈地集合 N4（或 N8）邻接
+    function defaultCanClaim(state, cell){
+      if (state.claimed.has(key(cell.x, cell.z))) return false;
+      if (state.claimed.size === 0) return true;
+
+      const nAdj = countClaimedNeighbors4(state.claimed, cell.x, cell.z);
+      if (nAdj === 0) return false;
+
+      // 内置模块规则（可开关）
+      const rules = state.rules;
+      const A0 = state.metrics.area || state.claimed.size;
+      const bounds0 = state.metrics.bounds || computeBounds(state.claimed);
+
+      // 1) 反细长：要求至少 2 邻接（更“胖”的扩张）
+      if (rules.requireTwoAdj && nAdj < 2) return false;
+
+      // 2) 限制“长臂猿”：只在单邻接扩张时检查新端点的臂长
+      if (rules.limitArm && nAdj === 1){
+        const kNew = key(cell.x, cell.z);
+        const nextSet = new Set(state.claimed);
+        nextSet.add(kNew);
+        const armLen = armLengthFromEndpoint4(nextSet, kNew);
+        if (armLen > rules.maxArmLen) return false;
+      }
+
+      // 3) 限制 P/A（越细长 P/A 越大）；用局部邻接数快速估算周长变化
+      if (rules.limitPA){
+        const P0 = state.metrics.perim || perimeterEdges(state.claimed);
+        const dP = 4 - 2 * nAdj; // 4 邻接下新增一个格子对周长的变化
+        const ratio = (P0 + dP) / (A0 + 1);
+        if (ratio > rules.maxPA) return false;
+      }
+
+      // 4) 限制端点数（degree==1 的格子数量，细长分叉越多端点越多）
+      if (rules.limitEndpoints){
+        const ends0 = state.metrics.endpoints || countEndpoints4(state.claimed);
+        let ends = ends0;
+
+        // 新格子成为端点
+        if (nAdj === 1) ends += 1;
+
+        // 相邻已圈地格子的端点状态可能改变（只需要看它们的度是否从 1->2 或 0->1）
+        for (const n of neighbors4(cell.x, cell.z)){
+          const nk = key(n.x, n.z);
+          if (!state.claimed.has(nk)) continue;
+          const degBefore = countClaimedNeighbors4(state.claimed, n.x, n.z);
+          const degAfter = degBefore + 1;
+          if (degBefore === 1 && degAfter === 2) ends -= 1;
+          if (degBefore === 0 && degAfter === 1) ends += 1;
+        }
+
+        if (ends > rules.maxEndpoints) return false;
+      }
+
+      // 5) 禁止“空心圈地”：形成被包围的空洞就拒绝
+      if (rules.forbidHoles){
+        const kNew = key(cell.x, cell.z);
+        const nextSet = new Set(state.claimed);
+        nextSet.add(kNew);
+        if (hasHoles4(nextSet)) return false;
+      }
+
+      // 6) 限制外接正方形填充率：A / L^2（L = max(width,height) 的最小外接正方形边长）
+      if (rules.limitOuterFill){
+        const b1 = updateBoundsWithCell(bounds0, cell.x, cell.z);
+        const L = b1.L || 1;
+        const fill = (A0 + 1) / (L * L);
+        if (fill < rules.minOuterFill) return false;
+      }
+
+      // 7) 限制最大内接实心正方形占比：Lin^2 / A（Lin 为完全被 claimed 填满的最大正方形边长）
+      if (rules.limitInnerShare){
+        const kNew = key(cell.x, cell.z);
+        const nextSet = new Set(state.claimed);
+        nextSet.add(kNew);
+        const b1 = updateBoundsWithCell(bounds0, cell.x, cell.z);
+        const Lin = maxFilledSquareSide(nextSet, b1);
+        const share = (Lin * Lin) / (A0 + 1);
+        if (share < rules.minInnerShare) return false;
+      }
+
+      return true;
+    }
+
+    let canClaimFn = defaultCanClaim;
+
+    /********************
+     * 初始化 3×3
+     ********************/
+    function resetToInitial(){
+      state.claimed.clear();
+      state.blocked.clear();
+      for (let x=-1; x<=1; x++){
+        for (let z=-1; z<=1; z++){
+          state.claimed.add(key(x,z));
+        }
+      }
+      render();
+      setMsg("已恢复初始 3×3。");
+    }
+
+    function clearAll(){
+      state.claimed.clear();
+      state.blocked.clear();
+      render();
+      setMsg("已清空。");
+    }
+
+    /********************
+     * 渲染
+     ********************/
+    const gridEl = document.getElementById("grid");
+    const stArea = document.getElementById("stArea");
+    const stPerim = document.getElementById("stPerim");
+    const stPA = document.getElementById("stPA");
+    const stDiam = document.getElementById("stDiam");
+    const stOuterFill = document.getElementById("stOuterFill");
+    const stInnerShare = document.getElementById("stInnerShare");
+    const msgEl = document.getElementById("msg");
+
+    function setMsg(s){
+      msgEl.textContent = s;
+    }
+
+    function computeAvailableSet(){
+      const avail = new Set();
+      if (state.claimed.size === 0) return avail;
+
+      for (const k0 of state.claimed){
+        const {x,z} = parseKey(k0);
+        for (const n of neighbors4(x,z)){
+          const nk = key(n.x,n.z);
+          if (!state.claimed.has(nk)) avail.add(nk);
+        }
+      }
+      return avail;
+    }
+
+    function render(){
+      // stats
+      const A = state.claimed.size;
+      const P = perimeterEdges(state.claimed);
+      const D = approxDiameter4(state.claimed);
+      const E = countEndpoints4(state.claimed);
+      const bounds = computeBounds(state.claimed);
+      const L = bounds?.L || 0;
+      const outerFill = (A && L) ? (A / (L * L)) : 0;
+      const Lin = bounds ? maxFilledSquareSide(state.claimed, bounds) : 0;
+      const innerShare = A ? ((Lin * Lin) / A) : 0;
+      state.metrics.area = A;
+      state.metrics.perim = P;
+      state.metrics.endpoints = E;
+      state.metrics.bounds = bounds;
+      state.metrics.outerFill = outerFill;
+      state.metrics.maxFilledSquare = Lin;
+      state.metrics.innerShare = innerShare;
+
+      stArea.textContent = String(A);
+      stPerim.textContent = String(P);
+      stPA.textContent = A ? (P / A).toFixed(3) : "-";
+      stDiam.textContent = String(D);
+      stOuterFill.textContent = A ? `${outerFill.toFixed(3)} (L=${L||0})` : "-";
+      stInnerShare.textContent = A ? `${innerShare.toFixed(3)} (Lin=${Lin||0})` : "-";
+
+      // grid
+      const N = state.viewSize;
+      const half = Math.floor(N/2);
+
+      gridEl.style.gridTemplateColumns = `repeat(${N}, var(--cell))`;
+
+      // 预计算可圈地集合（邻接）
+      const available = computeAvailableSet();
+
+      // 根据当前逻辑计算 blocked（只对“可圈地集合”或整个视窗计算，取决于 autoAvailOnly）
+      state.blocked.clear();
+      const shouldCheck = (x,z) => {
+        const k0 = key(x,z);
+        if (state.claimed.has(k0)) return false;
+        if (state.options.autoAvailOnly) return available.has(k0);
+        return true;
+      };
+
+      for (let x=-half; x<=half; x++){
+        for (let z=-half; z<=half; z++){
+          if (!shouldCheck(x,z)) continue;
+          const ok = safeCanClaim({x,z});
+          if (!ok) state.blocked.add(key(x,z));
+        }
+      }
+
+      // 生成 DOM（简单直接；N 最大 61 时也能接受）
+      const frag = document.createDocumentFragment();
+      for (let z=half; z>=-half; z--){ // 让 z 轴向上
+        for (let x=-half; x<=half; x++){
+          const k0 = key(x,z);
+          const div = document.createElement("div");
+          div.className = "cell";
+          div.dataset.x = String(x);
+          div.dataset.z = String(z);
+
+          if (state.claimed.has(k0)) div.classList.add("claimed");
+          else if (state.blocked.has(k0)) div.classList.add("blocked");
+          else if (available.has(k0) || !state.options.autoAvailOnly) div.classList.add("available");
+
+          if (state.options.showCoord){
+            div.textContent = `${x},${z}`;
+          }
+          frag.appendChild(div);
+        }
+      }
+      gridEl.replaceChildren(frag);
+    }
+
+    function safeCanClaim(cell){
+      try{
+        const res = canClaimFn(state, cell);
+        return !!res;
+      }catch(err){
+        setMsg(`逻辑运行错误：${err?.message || String(err)}`);
+        return false;
+      }
+    }
+
+    /********************
+     * 交互：点击圈地
+     ********************/
+    gridEl.addEventListener("click", (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (!t.classList.contains("cell")) return;
+
+      const x = Number(t.dataset.x);
+      const z = Number(t.dataset.z);
+      const k0 = key(x,z);
+
+      if (state.claimed.has(k0)){
+        setMsg(`(${x},${z}) 已经是已圈地。`);
+        return;
+      }
+
+      // 可选：只允许点“可圈地”(邻接)的格子
+      if (state.options.autoAvailOnly){
+        const available = computeAvailableSet();
+        if (!available.has(k0)){
+          setMsg(`(${x},${z}) 不是邻接可圈地格子（请从蓝色格子扩张）。`);
+          return;
+        }
+      }
+
+      const ok = safeCanClaim({x,z});
+      if (!ok){
+        setMsg(`逻辑拒绝：不能圈 (${x},${z})`);
+        render();
+        return;
+      }
+
+      state.claimed.add(k0);
+      setMsg(`已圈地：(${x},${z})`);
+      render();
+    });
+
+    /********************
+     * 逻辑编辑器：应用 / 重置
+     ********************/
+    const codeEl = document.getElementById("code");
+
+    const DEFAULT_CODE = `// 你只需要实现 canClaim(state, cell) 并返回 true/false。
+// state.claimed: Set，元素是 "x,z" 字符串
+// cell: {x, z}
+// 你可以读取 state.options.autoAvailOnly 等
+//
+// 示例：默认逻辑（必须与已有领地 4 邻接）
+function canClaim(state, cell){
+  const k = cell.x + "," + cell.z;
+  if (state.claimed.has(k)) return false;
+  if (state.claimed.size === 0) return true;
+
+  for (const n of neighbors4(cell.x, cell.z)){
+    if (state.claimed.has(n.x + "," + n.z)) return true;
+  }
+  return false;
+}
+
+// 你也可以添加辅助函数（例如：九宫格密度、端点延伸限制等）`;
+
+    codeEl.value = DEFAULT_CODE;
+
+    function applyLogicFromEditor(){
+      const userCode = codeEl.value;
+      try{
+        // 把 neighbors4 / neighbors8 暴露给用户逻辑
+        const factory = new Function("neighbors4", "neighbors8", `
+          "use strict";
+          ${userCode}
+          if (typeof canClaim !== "function") {
+            throw new Error("未找到 canClaim(state, cell) 函数");
+          }
+          return canClaim;
+        `);
+        const fn = factory(neighbors4, neighbors8);
+        canClaimFn = fn;
+        setMsg("已应用新的 canClaim 逻辑。");
+        render();
+      }catch(err){
+        setMsg(`应用失败：${err?.message || String(err)}`);
+      }
+    }
+
+    function resetLogic(){
+      codeEl.value = DEFAULT_CODE;
+      canClaimFn = defaultCanClaim;
+      setMsg("已重置逻辑为默认。");
+      render();
+    }
+
+    document.getElementById("applyBtn").addEventListener("click", applyLogicFromEditor);
+    document.getElementById("resetLogicBtn").addEventListener("click", resetLogic);
+
+    /********************
+     * 控件
+     ********************/
+    document.getElementById("resetBtn").addEventListener("click", resetToInitial);
+    document.getElementById("clearBtn").addEventListener("click", clearAll);
+
+    document.getElementById("showCoord").addEventListener("change", (e) => {
+      state.options.showCoord = e.target.checked;
+      render();
+    });
+    document.getElementById("autoAvail").addEventListener("change", (e) => {
+      state.options.autoAvailOnly = e.target.checked;
+      render();
+    });
+
+    // 内置规则开关
+    const num = (v, fallback) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    document.getElementById("ruleTwoAdj").addEventListener("change", (e) => {
+      state.rules.requireTwoAdj = e.target.checked;
+      render();
+    });
+    document.getElementById("ruleArm").addEventListener("change", (e) => {
+      state.rules.limitArm = e.target.checked;
+      render();
+    });
+    document.getElementById("armLen").addEventListener("input", (e) => {
+      state.rules.maxArmLen = Math.max(1, Math.floor(num(e.target.value, state.rules.maxArmLen)));
+      render();
+    });
+    document.getElementById("rulePA").addEventListener("change", (e) => {
+      state.rules.limitPA = e.target.checked;
+      render();
+    });
+    document.getElementById("paMax").addEventListener("input", (e) => {
+      state.rules.maxPA = Math.max(0.1, num(e.target.value, state.rules.maxPA));
+      render();
+    });
+    document.getElementById("ruleEnds").addEventListener("change", (e) => {
+      state.rules.limitEndpoints = e.target.checked;
+      render();
+    });
+    document.getElementById("endsMax").addEventListener("input", (e) => {
+      state.rules.maxEndpoints = Math.max(1, Math.floor(num(e.target.value, state.rules.maxEndpoints)));
+      render();
+    });
+    document.getElementById("ruleHoles").addEventListener("change", (e) => {
+      state.rules.forbidHoles = e.target.checked;
+      render();
+    });
+    document.getElementById("ruleOuterFill").addEventListener("change", (e) => {
+      state.rules.limitOuterFill = e.target.checked;
+      render();
+    });
+    document.getElementById("outerFillMin").addEventListener("input", (e) => {
+      state.rules.minOuterFill = Math.min(1, Math.max(0, num(e.target.value, state.rules.minOuterFill)));
+      render();
+    });
+    document.getElementById("ruleInnerShare").addEventListener("change", (e) => {
+      state.rules.limitInnerShare = e.target.checked;
+      render();
+    });
+    document.getElementById("innerShareMin").addEventListener("input", (e) => {
+      state.rules.minInnerShare = Math.min(1, Math.max(0, num(e.target.value, state.rules.minInnerShare)));
+      render();
+    });
+    document.getElementById("sizeSel").addEventListener("change", (e) => {
+      state.viewSize = Number(e.target.value);
+      render();
+    });
+
+    /********************
+     * 弹出编辑器窗口（可选）
+     ********************/
+    let popWin = null;
+    document.getElementById("popBtn").addEventListener("click", () => {
+      if (popWin && !popWin.closed){
+        popWin.focus();
+        return;
+      }
+      popWin = window.open("", "LogicEditor", "width=700,height=700");
+      if (!popWin) { setMsg("弹出窗口被浏览器拦截。"); return; }
+
+      const html = `
+<!doctype html><html><head><meta charset="utf-8">
+<title>圈地逻辑编辑器</title>
+<style>
+  body{margin:0;background:#0f1115;color:#e6e6e6;font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,PingFang SC,Microsoft YaHei,Arial;}
+  .hdr{padding:10px 12px;border-bottom:1px solid #2a3140;display:flex;gap:8px;align-items:center;justify-content:space-between;background:#161a22;}
+  button{background:#111521;color:#e6e6e6;border:1px solid #2a3140;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;}
+  .wrap{padding:12px;height:calc(100vh - 54px);box-sizing:border-box;display:flex;flex-direction:column;gap:8px;}
+  textarea{flex:1;resize:none;background:#0b0d12;color:#e5e7eb;border:1px solid #2a3140;border-radius:10px;padding:10px;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.45;}
+  .msg{font-size:12px;color:#a8b0c0;background:#111521;border:1px solid #2a3140;border-radius:10px;padding:8px 10px;white-space:pre-wrap;min-height:40px;}
+</style>
+</head><body>
+  <div class="hdr">
+    <div>JS 逻辑编辑器（弹窗）</div>
+    <div style="display:flex;gap:8px;">
+      <button id="send">发送到主页面</button>
+      <button id="close">关闭</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <textarea id="code"></textarea>
+    <div class="msg" id="msg">点击“发送到主页面”后，再在主页面点“应用逻辑”。</div>
+  </div>
+<script>
+  const code = document.getElementById('code');
+  const msg = document.getElementById('msg');
+  window.addEventListener('message', (ev) => {
+    if (!ev.data || ev.data.type !== 'INIT_CODE') return;
+    code.value = ev.data.code || '';
+  });
+  document.getElementById('send').addEventListener('click', () => {
+    window.opener && window.opener.postMessage({type:'PUSH_CODE', code: code.value}, '*');
+    msg.textContent = '已发送。';
+  });
+  document.getElementById('close').addEventListener('click', () => window.close());
+<\/script>
+</body></html>`;
+
+      popWin.document.open();
+      popWin.document.write(html);
+      popWin.document.close();
+
+      // 初始化代码
+      popWin.postMessage({type:"INIT_CODE", code: codeEl.value}, "*");
+    });
+
+    window.addEventListener("message", (ev) => {
+      if (!ev.data || ev.data.type !== "PUSH_CODE") return;
+      codeEl.value = ev.data.code || "";
+      setMsg("已从弹窗接收代码（点击“应用逻辑”生效）。");
+    });
+
+    /********************
+     * 启动
+     ********************/
+    resetToInitial();
+  </script>
+</body>
+</html>

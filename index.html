@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>圈地可视化预览（3×3 起始）</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 左：可视化 -->
+    <div class="card">
+      <div class="hdr">
+        <div>
+          <div class="title">领地圈地预览</div>
+          <div class="sub">初始 3×3；点击蓝色“可圈地”区块进行扩张；红色表示被逻辑阻止</div>
+        </div>
+        <div class="row">
+          <button id="resetBtn" class="primary">恢复初始 3×3</button>
+          <button id="clearBtn" class="danger">清空全部</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="row">
+          <div class="tog">
+            <input id="showCoord" type="checkbox" />
+            <label for="showCoord">显示坐标</label>
+          </div>
+          <div class="tog">
+            <input id="autoAvail" type="checkbox" checked />
+            <label for="autoAvail">只允许点击“可圈地”(邻接)区块</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleTwoAdj" type="checkbox" />
+            <label for="ruleTwoAdj">扩张需≥2邻接</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleArm" type="checkbox" checked />
+            <label for="ruleArm">限制长臂</label>
+            <span class="sub">L=</span>
+            <input id="armLen" type="number" min="1" max="50" step="1" value="6" style="width:64px" />
+          </div>
+
+          <div class="tog">
+            <input id="rulePA" type="checkbox" />
+            <label for="rulePA">限制 周长/面积</label>
+            <span class="sub">≤</span>
+            <input id="paMax" type="number" min="0.1" max="99" step="0.1" value="3.5" style="width:72px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleEnds" type="checkbox" />
+            <label for="ruleEnds">限制端点数</label>
+            <span class="sub">≤</span>
+            <input id="endsMax" type="number" min="1" max="9999" step="1" value="64" style="width:72px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleHoles" type="checkbox" />
+            <label for="ruleHoles">禁止空心圈地</label>
+          </div>
+
+          <div class="tog">
+            <input id="ruleOuterFill" type="checkbox" />
+            <label for="ruleOuterFill">限制外接方填充率</label>
+            <span class="sub">≥</span>
+            <input id="outerFillMin" type="number" min="0" max="1" step="0.01" value="0.65" style="width:76px" />
+          </div>
+
+          <div class="tog">
+            <input id="ruleInnerShare" type="checkbox" />
+            <label for="ruleInnerShare">限制最大内接方占比</label>
+            <span class="sub">≥</span>
+            <input id="innerShareMin" type="number" min="0" max="1" step="0.01" value="0.20" style="width:76px" />
+          </div>
+
+          <div style="flex:1"></div>
+          <div class="sub">视窗大小：</div>
+          <select id="sizeSel">
+            <option value="21">21×21</option>
+            <option value="31" selected>31×31</option>
+            <option value="41">41×41</option>
+            <option value="61">61×61</option>
+          </select>
+        </div>
+
+        <div class="legend">
+          <span><span class="dot ok"></span>已圈地</span>
+          <span><span class="dot av"></span>可圈地（邻接）</span>
+          <span><span class="dot bd"></span>被逻辑阻止</span>
+          <span class="sub">（滚动查看大视窗；坐标中心为 (0,0)）</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">面积 A（chunks）</div><div class="v" id="stArea">-</div></div>
+          <div class="stat"><div class="k">边界周长 P（边数）</div><div class="v" id="stPerim">-</div></div>
+          <div class="stat"><div class="k">P/A</div><div class="v" id="stPA">-</div></div>
+          <div class="stat"><div class="k">直径 D（4邻接近似）</div><div class="v" id="stDiam">-</div></div>
+          <div class="stat"><div class="k">外接方填充 A/L2</div><div class="v" id="stOuterFill">-</div></div>
+          <div class="stat"><div class="k">内接方占比 Lin2/A</div><div class="v" id="stInnerShare">-</div></div>
+        </div>
+
+        <div class="gridWrap">
+          <div class="grid" id="gridScroll">
+            <div class="gridInner" id="grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：逻辑编辑器 -->
+    <div class="card">
+      <div class="hdr">
+        <div>
+          <div class="title">JS 逻辑编辑器</div>
+          <div class="sub">写一个 canClaim(state, cell) → true/false；点击“应用逻辑”生效</div>
+        </div>
+        <div class="row">
+          <button id="applyBtn" class="primary">应用逻辑</button>
+          <button id="resetLogicBtn">重置为默认逻辑</button>
+          <button id="popBtn">弹出编辑器窗口</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="editor">
+          <textarea id="code"></textarea>
+          <div class="msg" id="msg">提示：默认逻辑 = 必须与已有领地 4 邻接才能圈地；可用上方开关限制“长臂/细长扩张”。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
+
