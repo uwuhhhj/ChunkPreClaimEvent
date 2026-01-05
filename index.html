@@ -8,99 +8,25 @@
 </head>
 <body>
   <div class="app">
-    <!-- 左：可视化 -->
-    <div class="card">
-      <div class="hdr">
-        <div>
-          <div class="title">领地圈地预览</div>
-          <div class="sub">初始 3×3；点击蓝色“可圈地”区块进行扩张；红色表示被逻辑阻止</div>
-        </div>
-        <div class="row">
-          <button id="resetBtn" class="primary">恢复初始 3×3</button>
-          <button id="clearBtn" class="danger">清空全部</button>
+    <!-- 左：交互网格（尽量大） -->
+    <div class="card mainPanel">
+        <div class="hdr">
+          <div>
+            <div class="title">领地圈地预览</div>
+            <div class="sub">初始 3×3；点击格子尝试扩张；红色表示被规则/逻辑阻止</div>
+          </div>
+          <div class="row">
+            <button id="resetBtn" class="primary">恢复初始 3×3</button>
+            <button id="clearBtn" class="danger">清空全部</button>
         </div>
       </div>
 
       <div class="content">
-        <div class="row">
-          <div class="tog">
-            <input id="showCoord" type="checkbox" />
-            <label for="showCoord">显示坐标</label>
-          </div>
-          <div class="tog">
-            <input id="autoAvail" type="checkbox" checked />
-            <label for="autoAvail">只允许点击“可圈地”(邻接)区块</label>
-          </div>
-
-          <div class="tog">
-            <input id="ruleTwoAdj" type="checkbox" />
-            <label for="ruleTwoAdj">扩张需≥2邻接</label>
-          </div>
-
-          <div class="tog">
-            <input id="ruleArm" type="checkbox" checked />
-            <label for="ruleArm">限制长臂</label>
-            <span class="sub">L=</span>
-            <input id="armLen" type="number" min="1" max="50" step="1" value="6" style="width:64px" />
-          </div>
-
-          <div class="tog">
-            <input id="rulePA" type="checkbox" />
-            <label for="rulePA">限制 周长/面积</label>
-            <span class="sub">≤</span>
-            <input id="paMax" type="number" min="0.1" max="99" step="0.1" value="3.5" style="width:72px" />
-          </div>
-
-          <div class="tog">
-            <input id="ruleEnds" type="checkbox" />
-            <label for="ruleEnds">限制端点数</label>
-            <span class="sub">≤</span>
-            <input id="endsMax" type="number" min="1" max="9999" step="1" value="64" style="width:72px" />
-          </div>
-
-          <div class="tog">
-            <input id="ruleHoles" type="checkbox" />
-            <label for="ruleHoles">禁止空心圈地</label>
-          </div>
-
-          <div class="tog">
-            <input id="ruleOuterFill" type="checkbox" />
-            <label for="ruleOuterFill">限制外接方填充率</label>
-            <span class="sub">≥</span>
-            <input id="outerFillMin" type="number" min="0" max="1" step="0.01" value="0.65" style="width:76px" />
-          </div>
-
-          <div class="tog">
-            <input id="ruleInnerShare" type="checkbox" />
-            <label for="ruleInnerShare">限制最大内接方占比</label>
-            <span class="sub">≥</span>
-            <input id="innerShareMin" type="number" min="0" max="1" step="0.01" value="0.20" style="width:76px" />
-          </div>
-
-          <div style="flex:1"></div>
-          <div class="sub">视窗大小：</div>
-          <select id="sizeSel">
-            <option value="21">21×21</option>
-            <option value="31" selected>31×31</option>
-            <option value="41">41×41</option>
-            <option value="61">61×61</option>
-          </select>
-        </div>
-
         <div class="legend">
           <span><span class="dot ok"></span>已圈地</span>
           <span><span class="dot av"></span>可圈地（邻接）</span>
           <span><span class="dot bd"></span>被逻辑阻止</span>
           <span class="sub">（滚动查看大视窗；坐标中心为 (0,0)）</span>
-        </div>
-
-        <div class="stats">
-          <div class="stat"><div class="k">面积 A（chunks）</div><div class="v" id="stArea">-</div></div>
-          <div class="stat"><div class="k">边界周长 P（边数）</div><div class="v" id="stPerim">-</div></div>
-          <div class="stat"><div class="k">P/A</div><div class="v" id="stPA">-</div></div>
-          <div class="stat"><div class="k">直径 D（4邻接近似）</div><div class="v" id="stDiam">-</div></div>
-          <div class="stat"><div class="k">外接方填充 A/L2</div><div class="v" id="stOuterFill">-</div></div>
-          <div class="stat"><div class="k">内接方占比 Lin2/A</div><div class="v" id="stInnerShare">-</div></div>
         </div>
 
         <div class="gridWrap">
@@ -111,24 +37,262 @@
       </div>
     </div>
 
-    <!-- 右：逻辑编辑器 -->
-    <div class="card">
-      <div class="hdr">
-        <div>
-          <div class="title">JS 逻辑编辑器</div>
-          <div class="sub">写一个 canClaim(state, cell) → true/false；点击“应用逻辑”生效</div>
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" tabindex="0" title="拖动调整左右比例"></div>
+
+    <!-- 右：配置与信息（可滚动） -->
+    <div class="sidebar sidePanel">
+      <div class="card">
+        <div class="hdr">
+          <div>
+            <div class="title">配置 / 规则</div>
+            <div class="sub">把配置放右侧，避免挡住底部交互区域</div>
+          </div>
         </div>
-        <div class="row">
-          <button id="applyBtn" class="primary">应用逻辑</button>
-          <button id="resetLogicBtn">重置为默认逻辑</button>
-          <button id="popBtn">弹出编辑器窗口</button>
+        <div class="content">
+          <div class="sections">
+            <div class="section">
+              <div class="sectionHdr">
+                <div class="sectionTitle">规则模块</div>
+                <div class="sectionSub">默认逻辑下生效</div>
+              </div>
+
+              <div class="miniGrid">
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">基础规则：四邻接扩张（A）</div>
+                      <div class="miniSub">只能从已有领地向上下左右扩张；完全不相邻的格子永远不能圈。你看到的蓝色“可圈地（邻接）”候选格，就是满足这条基础规则后，再交给下方模块继续筛选的结果。</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">双邻接门槛（B）</div>
+                      <div class="miniSub">开启后，新扩张的格子必须同时挨着至少 2 个已圈地格子（四邻接）。它会显著抑制“细长触手式”扩张，让形状更稳、更不容易被一条线拉长；关闭时仍允许只挨着 1 格扩张。</div>
+                    </div>
+                    <label class="switch" title="双邻接门槛（B）">
+                      <input id="ruleTwoAdj" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">邻域支撑门槛（J：8/24）</div>
+                      <div class="miniSub">以“准备扩张的目标格”为中心，统计周围 1 圈（8 格）与 1+2 圈（24 格）里的已圈地/可圈地数量。开启后需同时满足：1圈已圈地 > m 且 1+2圈已圈地 > n 才允许扩张，用于鼓励在已有势力附近“抱团推进”，减少孤立伸出去的点。</div>
+                    </div>
+                    <label class="switch" title="邻域支撑门槛（J：8/24）">
+                      <input id="ruleSupport" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <input id="supportMRange" class="range" type="range" min="0" max="8" step="1" value="2" data-wheel />
+                      <input id="supportM" class="num" type="number" min="0" max="8" step="1" value="2" data-wheel />
+                    </div>
+                    <div class="miniMeta">m（1圈已圈地需 > m）</div>
+                    <div class="controlRow">
+                      <input id="supportNRange" class="range" type="range" min="0" max="24" step="1" value="6" data-wheel />
+                      <input id="supportN" class="num" type="number" min="0" max="24" step="1" value="6" data-wheel />
+                    </div>
+                    <div class="miniMeta">n（1+2圈已圈地需 > n）</div>
+                    <div class="calcBox" id="calcSupport">提示：悬停一个“可圈地（蓝色）”格子查看计算明细。</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">长臂抑制（C）</div>
+                      <div class="miniSub">只在“单邻接扩张”时生效：把新格视为端点，沿着细臂向回追溯步数（直到出现分叉/转折/闭环），得到 armLen。若 armLen 超过 L，就拒绝这次扩张，用于压制拉长臂、拉细线。</div>
+                    </div>
+                    <label class="switch" title="长臂抑制（C）">
+                      <input id="ruleArm" type="checkbox" checked />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <input id="armLenRange" class="range" type="range" min="1" max="50" step="1" value="6" data-wheel />
+                      <input id="armLen" class="num" type="number" min="1" max="50" step="1" value="6" data-wheel />
+                    </div>
+                    <div class="miniMeta">L（最大臂长）</div>
+                    <div class="calcBox" id="calcArm">-</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">形状紧凑度上限（D：P/A）</div>
+                      <div class="miniSub">用周长 P ÷ 面积 A 衡量“细长程度”：越细长，周长相对越大，P/A 越高。开启后会预估新增一格后的 P/A，若超过上限就拒绝，适合把领地往更紧凑、更接近团块的形状引导。</div>
+                    </div>
+                    <label class="switch" title="形状紧凑度上限（D：P/A）">
+                      <input id="rulePA" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <div class="rangeWrap">
+                        <input id="paMaxRange" class="range" type="range" min="0.1" max="12" step="0.1" value="3.5" data-wheel />
+                        <div class="rangeMark" id="metricPAMark" aria-hidden="true"></div>
+                      </div>
+                      <input id="paMax" class="num" type="number" min="0.1" max="99" step="0.1" value="3.5" data-wheel />
+                    </div>
+                    <div class="miniMeta">上限（越小越严格） · 当前：<span id="metricPA">-</span></div>
+                    <div class="miniMeta">面积 A：<span id="stArea">-</span> · 周长 P：<span id="stPerim">-</span></div>
+                    <div class="calcBox" id="calcPA">-</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">直径上限（I：D）</div>
+                      <div class="miniSub">用 4 邻接步数近似“直径”D：领地内任意两格之间最远需要走多少步。开启后，若新增一格会让 D 超过上限就拒绝，适合限制跨度和“长走廊式”延伸，让范围不要摊得太开。</div>
+                    </div>
+                    <label class="switch" title="直径上限（I：D，4 邻接近似）">
+                      <input id="ruleDiam" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <div class="rangeWrap">
+                        <input id="diamMaxRange" class="range" type="range" min="0" max="512" step="1" value="64" data-wheel />
+                        <div class="rangeMark" id="metricDiamMark" aria-hidden="true"></div>
+                      </div>
+                      <input id="diamMax" class="num" type="number" min="0" max="9999" step="1" value="64" data-wheel />
+                    </div>
+                    <div class="miniMeta">上限（越小越严格） · 当前：<span id="metricDiam">-</span></div>
+                    <div class="calcBox" id="calcDiam">-</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">端点数上限（E）</div>
+                      <div class="miniSub">端点指 4 邻接度为 1 的格子（像枝条末端）。开启后，系统会估算新增一格后的端点总数，超过上限就拒绝；它能减少毛刺和分叉，让边界更平滑，也能限制“到处伸触手”的扩张风格。</div>
+                    </div>
+                    <label class="switch" title="端点数上限（E）">
+                      <input id="ruleEnds" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <div class="rangeWrap">
+                        <input id="endsMaxRange" class="range" type="range" min="1" max="256" step="1" value="64" data-wheel />
+                        <div class="rangeMark" id="metricEndsMark" aria-hidden="true"></div>
+                      </div>
+                      <input id="endsMax" class="num" type="number" min="1" max="9999" step="1" value="64" data-wheel />
+                    </div>
+                    <div class="miniMeta">上限（建议先从 64 调） · 当前：<span id="metricEnds">-</span></div>
+                    <div class="calcBox" id="calcEnds">-</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">禁止空心（F）</div>
+                      <div class="miniSub">洞指被领地包围、与外界不连通的空格（按四邻接判定）。开启后不允许扩张制造新洞；若当前已存在洞，也不允许把洞变大，便于用“只填不扩洞”的方式逐步修补空心区域。</div>
+                    </div>
+                    <label class="switch" title="禁止空心（F）：禁止新增洞；已有洞时不允许变大">
+                      <input id="ruleHoles" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">外接方填充率下限（G：A/L²）</div>
+                      <div class="miniSub">用 A/L² 衡量“外接正方形里填得满不满”：A 为面积；L 为最小轴对齐外接正方形边长。开启后要求该值不低于下限；若当前已低于下限，则只允许不变差的扩张，避免越铺越散。</div>
+                    </div>
+                    <label class="switch" title="外接方填充率下限（G：A/L²）">
+                      <input id="ruleOuterFill" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <div class="rangeWrap">
+                        <input id="outerFillMinRange" class="range" type="range" min="0" max="1" step="0.01" value="0.65" data-wheel />
+                        <div class="rangeMark" id="metricOuterFillMark" aria-hidden="true"></div>
+                      </div>
+                      <input id="outerFillMin" class="num" type="number" min="0" max="1" step="0.01" value="0.65" data-wheel />
+                    </div>
+                    <div class="miniMeta">下限（0~1） · 当前：<span id="metricOuterFill">-</span></div>
+                    <div class="calcBox" id="calcOuterFill">-</div>
+                  </div>
+                </div>
+
+                <div class="miniCard">
+                  <div class="miniHdr">
+                    <div>
+                      <div class="miniTitle">内接实心方占比下限（H：Lin²/A）</div>
+                      <div class="miniSub">用 Lin²/A 衡量“内部有多扎实”：Lin 为领地内能找到的最大轴对齐“全填满”实心正方形边长。开启后要求该占比不低于下限，避免只沿边铺一圈而中间空洞，鼓励更厚实的占领。</div>
+                    </div>
+                    <label class="switch" title="内接实心方占比下限（H：Lin²/A）">
+                      <input id="ruleInnerShare" type="checkbox" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="miniBody">
+                    <div class="controlRow">
+                      <div class="rangeWrap">
+                        <input id="innerShareMinRange" class="range" type="range" min="0" max="1" step="0.01" value="0.20" data-wheel />
+                        <div class="rangeMark" id="metricInnerShareMark" aria-hidden="true"></div>
+                      </div>
+                      <input id="innerShareMin" class="num" type="number" min="0" max="1" step="0.01" value="0.20" data-wheel />
+                    </div>
+                    <div class="miniMeta">下限（0~1） · 当前：<span id="metricInnerShare">-</span></div>
+                    <div class="calcBox" id="calcInnerShare">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="content">
-        <div class="editor">
-          <textarea id="code"></textarea>
-          <div class="msg" id="msg">提示：默认逻辑 = 必须与已有领地 4 邻接才能圈地；可用上方开关限制“长臂/细长扩张”。</div>
+      <div class="card">
+        <div class="hdr">
+          <div>
+            <div class="title">交互信息</div>
+            <div class="sub">悬停看原因；点击显示拒绝详情</div>
+          </div>
+          <div class="row">
+            <button id="copyMsgBtn" class="primary">复制消息</button>
+            <button id="clearMsgBtn">清空</button>
+          </div>
+        </div>
+        <div class="content">
+          <div class="inspector">
+            <div class="insHdr">
+              <div>
+                <div class="insTitle">指针信息</div>
+                <div class="insSub">悬停格子查看状态/原因</div>
+              </div>
+            </div>
+            <div class="insBody">
+              <div class="insRow"><div class="k">坐标</div><div class="v" id="hoverCoord">-</div></div>
+              <div class="insRow"><div class="k">状态</div><div class="v" id="hoverStatus">-</div></div>
+              <div class="insRow"><div class="k">原因</div><div class="v mono" id="hoverReason">-</div></div>
+            </div>
+          </div>
+
+          <div class="logBody">
+            <pre class="logText" id="msg">提示：点击格子尝试扩张；红色表示被规则拒绝（原因会显示在这里）。</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -139,7 +303,6 @@
   <script defer src="src/state.js"></script>
   <script defer src="src/rules.js"></script>
   <script defer src="src/render.js"></script>
-  <script defer src="src/editor.js"></script>
   <script defer src="src/main.js"></script>
 </body>
 </html>

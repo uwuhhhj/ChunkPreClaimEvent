@@ -5,17 +5,19 @@
   app.state.createInitialState = () => ({
     claimed: new Set(),
     blocked: new Set(),
-    viewSize: 31,
-    options: {
-      showCoord: false,
-      autoAvailOnly: true,
-    },
+    available: new Set(),
+    viewSize: 10,
     rules: {
       requireTwoAdj: false,
       limitArm: true,
       maxArmLen: 6,
+      limitSupport: false,
+      supportM: 2,
+      supportN: 6,
       limitPA: false,
       maxPA: 3.5,
+      limitDiam: false,
+      maxDiam: 64,
       limitEndpoints: false,
       maxEndpoints: 64,
       forbidHoles: false,
@@ -27,6 +29,7 @@
     metrics: {
       area: 0,
       perim: 0,
+      diam: 0,
       endpoints: 0,
       bounds: null,
       outerFill: 0,
