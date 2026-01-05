@@ -1,45 +1,52 @@
 # ChunkPreClaimEvent
 
-一个纯前端的“圈地/领地扩张”可视化小工具：左侧是大网格交互区，右侧是配置/规则与消息面板。
+ChunkPreClaimEvent is a visual planning aid for the “claim a grid neighborhood” workflow. The left pane is a big grid where you build shapes, while the right pane shows the rule set, options, and contextual messaging that drive the planner.
 
-## 运行
+## Running
 
-两种方式都可以：
+You can launch the experience in two ways:
 
-1) 直接双击打开 `index.html`（纯本地使用）。
-2) 启动静态服务器后访问（便于分享）：
+1. Double-click `index.html` for a quick local preview without a server.
+2. Start a static file server, which is useful for sharing a live preview:
 
 ```bash
 python -m http.server 8000
 ```
 
-浏览器访问：`http://localhost:8000/index.html`
+Then visit `http://localhost:8000/index.html` in your browser.
 
-## 目录结构
+## Directory layout
 
-- `index.html`：页面结构（不含内联 CSS/JS）。
-- `styles.css`：样式。
-- `src/main.js`：应用入口（事件绑定、状态初始化、启动渲染）。
-- `src/render.js`：渲染与可圈地集合计算。
-- `src/rules.js`：默认圈地规则（内置模块开关都在这里判定）。
-- `src/metrics.js`：周长/直径/外接方/内接方等指标计算。
-- `src/utils.js`：坐标与邻接工具。
-- `src/state.js`：默认状态结构与规则开关默认值。
+- `index.html`: HTML shell that wires the CSS and module scripts together.
+- `styles.css`: Styling for the grid, controls, and layout panels.
+- `src/main.js`: Application entry point—wires DOM events, bootstraps the initial state, and launches the render loop.
+- `src/state.js`: Centralized state container with default toggle values and helpers for reading or mutating rule flags.
+- `src/render.js`: Grid rendering logic plus the geometry (chunk) calculations that drive the planner visuals.
+- `src/rules.js`: Rule definitions that decide whether a prospective claim is allowed; these are also the hooks that power the toggles in the sidebar.
+- `src/metrics.js`: Shared utilities for perimeter, diameter, and other shape metrics.
+- `src/utils.js`: Grid helpers such as neighbor lookup, coordinate conversions, and overlap checks.
 
-## 内置规则模块（开关）
+## Module breakdown
 
-这些开关只作用于“默认逻辑”（`src/rules.js:defaultCanClaim`）。
+- **`index.html`** stays minimal, loading the CSS and each module as separate scripts so you can tweak any module independently.
+- **`styles.css`** styles the two-panel layout (grid on the left, rule controls on the right) and defines the look of claimed cells, tooltips, and notifications.
+- **`src/main.js`** orchestrates the UI: it binds pointer and keyboard events, keeps the default state in sync with `src/state.js`, and triggers `src/render.js` to redraw whenever something changes.
+- **`src/state.js`** exports the default state, exposes helpers to reset or update the rule toggles, and keeps track of the currently hovered/selected grid cell for rendering.
+- **`src/render.js`** performs the actual rendering and chunk-aggregation calculations. It reads the current state, applies the rules from `src/rules.js`, and carries the geometry information into the display layer.
+- **`src/rules.js`** contains the `defaultCanClaim` logic and all of the built-in rule modules that drive the sidebar toggles:
+  - *Double-adjacent threshold (B)*: require a candidate cell to be edge-adjacent to at least two existing claimed cells.
+  - *Neighborhood support gate (J/24)*: ensure the cell is surrounded by a supporting ring of previously claimed tiles before allowing expansion.
+  - *Arm-length limit (C)*: restricts how far extensions can grow along a single direction (arm length must stay under `L`).
+  - *Shape tightness cap (D: P/A)*: prevents thin shapes from evading other limits by capping the perimeter-to-area ratio.
+  - *Diameter limit (I: D)*: bounds the maximum distance between the farthest two cells in a shape.
+  - *Endpoint count limit (E)*: caps the number of degree-1 nodes (cells with only one adjacent claimed neighbor).
+  - *Hole prevention (F)*: forbids creating isolated pockets that are not connected to the claimed area.
+  - *Exterior fill ratio floor (G: A/L²)*: limits the external area-to-length ratio (`L` equals the width of the bounding square).
+  - *Interior fill ratio floor (H: Lin²/A)*: guards against overly sparse interiors by requiring a minimum ratio of the largest filling square to the claimed area.
+- **`src/metrics.js`** exports helpers for computing lengths, diameters, and other measurements that rules rely on—this keeps the rule definitions focused on policy, not math.
+- **`src/utils.js`** provides reusable helpers (grid neighbor iteration, coordinate clamping, claim set sorting) so every module can stay compact.
 
-- `双邻接门槛（B）`：新增格子必须与至少 2 个已圈地格子四邻接。
-- `邻域支撑门槛（J：8/24）`：目标格周围 1圈(8格)已圈地>m 且 1+2圈(24格)已圈地>n 才允许扩张（两者需同时满足）。
-- `长臂抑制（C）`：只在“单邻接扩张”时限制细臂长度（`armLen ≤ L`）。
-- `形状紧凑度上限（D：P/A）`：限制 `P/A` 上限（细长形状更容易超标）。
-- `直径上限（I：D）`：限制领地内最远两点距离（4 邻接步数近似）。
-- `端点数上限（E）`：限制 4 邻接度为 1 的端点数量。
-- `禁止空心（F）`：禁止新增与外部不连通的“洞”（4 邻接定义）；若当前已存在洞，则不允许让洞变大（用于逐步填洞）。
-- `外接方填充率下限（G：A/L²）`：限制 `A/L²` 下限（`L` 为轴对齐最小外接正方形边长）。
-- `内接实心方占比下限（H：Lin²/A）`：限制 `Lin²/A` 下限（`Lin` 为最大“实心填满”的轴对齐正方形边长）。
+## Customizing the logic
 
-## 说明
-
-- 已移除“自定义 canClaim 编辑器/弹窗”等旧逻辑；如需自定义规则，请直接改 `src/rules.js`。
+- If you want to tweak how the planner decides whether a cell can be claimed, edit `src/rules.js` and adjust `defaultCanClaim` or the individual gate implementations.
+- The sidebar toggles simply flip flags inside `src/state.js`, so updating a toggle instantly re-evaluates the rules without reloading the page.

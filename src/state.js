@@ -20,7 +20,7 @@
       maxDiam: 64,
       limitEndpoints: false,
       maxEndpoints: 64,
-      forbidHoles: false,
+      forbidHoles: true,
       limitOuterFill: false,
       minOuterFill: 0.65,
       limitInnerShare: false,
