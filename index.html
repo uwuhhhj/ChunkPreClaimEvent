@@ -60,7 +60,7 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">基础规则：四邻接扩张（A）</div>
+                      <div class="miniTitle">A：基础规则：四邻接扩张</div>
                       <div class="miniSub">只能从已有领地向上下左右扩张；完全不相邻的格子永远不能圈。你看到的蓝色“可圈地（邻接）”候选格，就是满足这条基础规则后，再交给下方模块继续筛选的结果。</div>
                     </div>
                   </div>
@@ -68,10 +68,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">双邻接门槛（B）</div>
+                      <div class="miniTitle">B：双邻接门槛</div>
                       <div class="miniSub">开启后，新扩张的格子必须同时挨着至少 2 个已圈地格子（四邻接）。它会显著抑制“细长触手式”扩张，让形状更稳、更不容易被一条线拉长；关闭时仍允许只挨着 1 格扩张。</div>
                     </div>
-                    <label class="switch" title="双邻接门槛（B）">
+                    <label class="switch" title="B：双邻接门槛">
                       <input id="ruleTwoAdj" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -81,23 +81,23 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">邻域支撑门槛（J：8/24）</div>
+                      <div class="miniTitle">J：邻域支撑门槛（8/24）</div>
                       <div class="miniSub">以“准备扩张的目标格”为中心，统计周围 1 圈（8 格）与 1+2 圈（24 格）里的已圈地/可圈地数量。开启后需同时满足：1圈已圈地 > m 且 1+2圈已圈地 > n 才允许扩张，用于鼓励在已有势力附近“抱团推进”，减少孤立伸出去的点。</div>
                     </div>
-                    <label class="switch" title="邻域支撑门槛（J：8/24）">
+                    <label class="switch" title="J：邻域支撑门槛（8/24）">
                       <input id="ruleSupport" type="checkbox" />
                       <span class="slider"></span>
                     </label>
                   </div>
                   <div class="miniBody">
                     <div class="controlRow">
-                      <input id="supportMRange" class="range" type="range" min="0" max="8" step="1" value="2" data-wheel />
-                      <input id="supportM" class="num" type="number" min="0" max="8" step="1" value="2" data-wheel />
+                      <input id="supportMRange" class="range" type="range" min="0" max="8" step="1" value="1" data-wheel />
+                      <input id="supportM" class="num" type="number" min="0" max="8" step="1" value="1" data-wheel />
                     </div>
                     <div class="miniMeta">m（1圈已圈地需 > m）</div>
                     <div class="controlRow">
-                      <input id="supportNRange" class="range" type="range" min="0" max="24" step="1" value="6" data-wheel />
-                      <input id="supportN" class="num" type="number" min="0" max="24" step="1" value="6" data-wheel />
+                      <input id="supportNRange" class="range" type="range" min="0" max="24" step="1" value="5" data-wheel />
+                      <input id="supportN" class="num" type="number" min="0" max="24" step="1" value="5" data-wheel />
                     </div>
                     <div class="miniMeta">n（1+2圈已圈地需 > n）</div>
                     <div class="calcBox" id="calcSupport">提示：悬停一个“可圈地（蓝色）”格子查看计算明细。</div>
@@ -107,10 +107,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">长臂抑制（C）</div>
+                      <div class="miniTitle">C：长臂抑制</div>
                       <div class="miniSub">只在“单邻接扩张”时生效：把新格视为端点，沿着细臂向回追溯步数（直到出现分叉/转折/闭环），得到 armLen。若 armLen 超过 L，就拒绝这次扩张，用于压制拉长臂、拉细线。</div>
                     </div>
-                    <label class="switch" title="长臂抑制（C）">
+                    <label class="switch" title="C：长臂抑制">
                       <input id="ruleArm" type="checkbox" checked />
                       <span class="slider"></span>
                     </label>
@@ -128,10 +128,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">形状紧凑度上限（D：P/A）</div>
+                      <div class="miniTitle">D：形状紧凑度上限（P/A）</div>
                       <div class="miniSub">用周长 P ÷ 面积 A 衡量“细长程度”：越细长，周长相对越大，P/A 越高。开启后会预估新增一格后的 P/A，若超过上限就拒绝，适合把领地往更紧凑、更接近团块的形状引导。</div>
                     </div>
-                    <label class="switch" title="形状紧凑度上限（D：P/A）">
+                    <label class="switch" title="D：形状紧凑度上限（P/A）">
                       <input id="rulePA" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -153,10 +153,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">直径上限（I：D）</div>
+                      <div class="miniTitle">I：直径上限（D）</div>
                       <div class="miniSub">用 4 邻接步数近似“直径”D：领地内任意两格之间最远需要走多少步。开启后，若新增一格会让 D 超过上限就拒绝，适合限制跨度和“长走廊式”延伸，让范围不要摊得太开。</div>
                     </div>
-                    <label class="switch" title="直径上限（I：D，4 邻接近似）">
+                    <label class="switch" title="I：直径上限（D，4 邻接近似）">
                       <input id="ruleDiam" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -177,10 +177,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">端点数上限（E）</div>
+                      <div class="miniTitle">E：端点数上限</div>
                       <div class="miniSub">端点指 4 邻接度为 1 的格子（像枝条末端）。开启后，系统会估算新增一格后的端点总数，超过上限就拒绝；它能减少毛刺和分叉，让边界更平滑，也能限制“到处伸触手”的扩张风格。</div>
                     </div>
-                    <label class="switch" title="端点数上限（E）">
+                    <label class="switch" title="E：端点数上限">
                       <input id="ruleEnds" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -201,10 +201,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">禁止空心（F）</div>
+                      <div class="miniTitle">F：禁止空心</div>
                       <div class="miniSub">洞指被领地包围、与外界不连通的空格（按四邻接判定）。开启后不允许扩张制造新洞；若当前已存在洞，也不允许把洞变大，便于用“只填不扩洞”的方式逐步修补空心区域。</div>
                     </div>
-                    <label class="switch" title="禁止空心（F）：禁止新增洞；已有洞时不允许变大">
+                    <label class="switch" title="F：禁止空心 - 禁止新增洞；已有洞时不允许变大">
                       <input id="ruleHoles" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -214,10 +214,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">外接方填充率下限（G：A/L²）</div>
+                      <div class="miniTitle">G：外接方填充率下限（A/L²）</div>
                       <div class="miniSub">用 A/L² 衡量“外接正方形里填得满不满”：A 为面积；L 为最小轴对齐外接正方形边长。开启后要求该值不低于下限；若当前已低于下限，则只允许不变差的扩张，避免越铺越散。</div>
                     </div>
-                    <label class="switch" title="外接方填充率下限（G：A/L²）">
+                    <label class="switch" title="G：外接方填充率下限（A/L²）">
                       <input id="ruleOuterFill" type="checkbox" />
                       <span class="slider"></span>
                     </label>
@@ -238,10 +238,10 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">内接实心方占比下限（H：Lin²/A）</div>
+                      <div class="miniTitle">H：内接实心方占比下限（Lin²/A）</div>
                       <div class="miniSub">用 Lin²/A 衡量“内部有多扎实”：Lin 为领地内能找到的最大轴对齐“全填满”实心正方形边长。开启后要求该占比不低于下限，避免只沿边铺一圈而中间空洞，鼓励更厚实的占领。</div>
                     </div>
-                    <label class="switch" title="内接实心方占比下限（H：Lin²/A）">
+                    <label class="switch" title="H：内接实心方占比下限（Lin²/A）">
                       <input id="ruleInnerShare" type="checkbox" />
                       <span class="slider"></span>
                     </label>
