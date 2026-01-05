@@ -207,21 +207,21 @@
 
   app.rules.defaultCanUnclaim = (state, cell) => {
     const k0 = key(cell.x, cell.z);
-    if (!state.claimed.has(k0)) return reject("U0｜撤销：非已圈地", "该格子不是已圈地");
+    if (!state.claimed.has(k0)) return reject("U0：撤销：非已圈地", "该格子不是已圈地");
     if (state.claimed.size <= 1) return ok();
 
     const nextSet = new Set(state.claimed);
     nextSet.delete(k0);
 
-    if (!isConnected4(nextSet)) return reject("U1｜撤销：保持连通", "撤销后会导致断裂（不连通）");
+    if (!isConnected4(nextSet)) return reject("U1：撤销：保持连通", "撤销后会导致断裂（不连通）");
     const curHoles = holeCells4(state.claimed);
     const nextHoles = holeCells4(nextSet);
     if (curHoles.size === 0) {
-      if (nextHoles.size > 0) return reject("U2｜撤销：不造洞/不扩洞", "撤销后会出现空心（洞）");
+      if (nextHoles.size > 0) return reject("U2：撤销：不造洞/不扩洞", "撤销后会出现空心（洞）");
     } else {
       for (const hk of nextHoles) {
         if (!curHoles.has(hk)) {
-          return reject("U2｜撤销：不造洞/不扩洞", `撤销后空心区域变大（${curHoles.size} -> ${nextHoles.size}）`);
+          return reject("U2：撤销：不造洞/不扩洞", `撤销后空心区域变大（${curHoles.size} -> ${nextHoles.size}）`);
         }
       }
     }
@@ -229,18 +229,18 @@
   };
 
   app.rules.defaultCanClaim = (state, cell) => {
-    if (state.claimed.has(key(cell.x, cell.z))) return reject("Z｜重复圈地", "该格子已是已圈地");
+    if (state.claimed.has(key(cell.x, cell.z))) return reject("Z：重复圈地", "该格子已是已圈地");
     if (state.claimed.size === 0) return ok();
 
     const nAdj = countClaimedNeighbors4(state.claimed, cell.x, cell.z);
-    if (nAdj === 0) return reject("A｜四邻接扩张", "必须与已有领地四邻接（上下左右相邻）");
+    if (nAdj === 0) return reject("A：四邻接扩张", "必须与已有领地四邻接（上下左右相邻）");
 
     const rules = state.rules;
     const area0 = state.metrics.area || state.claimed.size;
     const bounds0 = state.metrics.bounds || computeBounds(state.claimed);
 
     if (rules.requireTwoAdj && nAdj < 2) {
-      return reject("B｜双邻接门槛", "扩张需至少 2 个已圈地格子的四邻接");
+      return reject("B：双邻接门槛", "扩张需至少 2 个已圈地格子的四邻接");
     }
 
     if (rules.limitArm && nAdj === 1) {
@@ -249,7 +249,7 @@
       nextSet.add(kNew);
       const armLen = armLengthFromEndpoint4(nextSet, kNew);
       if (armLen > rules.maxArmLen) {
-        return reject("C｜长臂抑制", `细长臂过长（armLen=${armLen} > L=${rules.maxArmLen}）`);
+        return reject("C：长臂抑制", `细长臂过长（armLen=${armLen} > L=${rules.maxArmLen}）`);
       }
     }
 
@@ -261,7 +261,7 @@
       const pass12 = Number.isFinite(n) ? ring12Claimed > n : false;
       if (!pass1 || !pass12) {
         return reject(
-          "J｜邻域支撑(8/24)",
+          "J：邻域支撑(8/24)",
           `1圈(8格) 已圈地=${ring1Claimed} 可圈地=${ring1Available}（需 > m=${rules.supportM}）且 1+2圈(24格) 已圈地=${ring12Claimed} 可圈地=${ring12Available}（需 > n=${rules.supportN}）`,
         );
       }
@@ -272,7 +272,7 @@
       const dP = 4 - 2 * nAdj;
       const ratio = (perim0 + dP) / (area0 + 1);
       if (ratio > rules.maxPA) {
-        return reject("D｜形状紧凑度(P/A)", `P/A 超标（${ratio.toFixed(3)} > ${rules.maxPA}）`);
+        return reject("D：形状紧凑度(P/A)", `P/A 超标（${ratio.toFixed(3)} > ${rules.maxPA}）`);
       }
     }
 
@@ -281,7 +281,7 @@
       nextSet.add(key(cell.x, cell.z));
       const diam = approxDiameter4(nextSet);
       if (diam > rules.maxDiam) {
-        return reject("I｜直径上限(D)", `直径 D 超标（${diam} > ${rules.maxDiam}）`);
+        return reject("I：直径上限(D)", `直径 D 超标（${diam} > ${rules.maxDiam}）`);
       }
     }
 
@@ -300,7 +300,7 @@
       }
 
       if (ends > rules.maxEndpoints) {
-        return reject("E｜端点数上限", `端点数超标（${ends} > ${rules.maxEndpoints}）`);
+        return reject("E：端点数上限", `端点数超标（${ends} > ${rules.maxEndpoints}）`);
       }
     }
 
@@ -312,10 +312,10 @@
       const nextHoles = holeCells4(nextSet);
 
       if (curHoles.size === 0) {
-        if (nextHoles.size > 0) return reject("F｜禁止空心(洞)", "出现空心圈地（洞）");
+        if (nextHoles.size > 0) return reject("F：禁止空心(洞)", "出现空心圈地（洞）");
       } else {
         if (nextHoles.size > curHoles.size) {
-          return reject("F｜禁止空心(洞)", `空心区域变大（${curHoles.size} -> ${nextHoles.size}）`);
+          return reject("F：禁止空心(洞)", `空心区域变大（${curHoles.size} -> ${nextHoles.size}）`);
         }
       }
     }
@@ -330,12 +330,12 @@
 
       if (curFill >= rules.minOuterFill) {
         if (nextFill < rules.minOuterFill) {
-          return reject("G｜外接方填充率(A/L²)", `外接正方形填充率过低（${nextFill.toFixed(3)} < ${rules.minOuterFill}）`);
+          return reject("G：外接方填充率(A/L²)", `外接正方形填充率过低（${nextFill.toFixed(3)} < ${rules.minOuterFill}）`);
         }
       } else {
         if (nextFill < curFill) {
           return reject(
-            "G｜外接方填充率(A/L²)",
+            "G：外接方填充率(A/L²)",
             `外接正方形填充率变差（${curFill.toFixed(3)} -> ${nextFill.toFixed(3)}，阈值=${rules.minOuterFill}）`,
           );
         }
@@ -349,7 +349,7 @@
       const Lin = maxFilledSquareSide(nextSet, b1);
       const share = (Lin * Lin) / (area0 + 1);
       if (share < rules.minInnerShare) {
-        return reject("H｜内接实心方占比(Lin²/A)", `最大内接实心方占比过低（${share.toFixed(3)} < ${rules.minInnerShare}）`);
+        return reject("H：内接实心方占比(Lin²/A)", `最大内接实心方占比过低（${share.toFixed(3)} < ${rules.minInnerShare}）`);
       }
     }
 

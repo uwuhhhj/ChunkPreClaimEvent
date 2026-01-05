@@ -4,7 +4,7 @@
 
   app.state.createInitialState = () => ({
     claimed: new Set(),
-    blocked: new Set(),
+    blocked: new Map(),
     available: new Set(),
     viewSize: 10,
     rules: {
@@ -12,8 +12,8 @@
       limitArm: true,
       maxArmLen: 6,
       limitSupport: false,
-      supportM: 2,
-      supportN: 6,
+      supportM: 1,
+      supportN: 5,
       limitPA: false,
       maxPA: 3.5,
       limitDiam: false,

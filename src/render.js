@@ -25,7 +25,22 @@
     return avail;
   };
 
-  app.render.render = (state, els, safeCanClaim) => {
+  const moduleBadge = (module) => {
+    if (!module) return "";
+    if (module === "RuntimeError") return "!";
+    const prefix = String(module).split(/[：:]/)[0].trim();
+    return prefix.slice(0, 3);
+  };
+
+  const formatDetails = (res) => {
+    if (!res) return "";
+    const module = typeof res.module === "string" ? res.module : "";
+    const reason = typeof res.reason === "string" ? res.reason : "";
+    if (module) return `${module}${reason ? `：${reason}` : ""}`;
+    return reason;
+  };
+
+  app.render.render = (state, els, canClaim) => {
     const rules = state.rules || {};
     const area = state.claimed.size;
     const perim = perimeterEdges(state.claimed);
@@ -256,8 +271,14 @@
       for (let z = zMin; z <= zMax; z++) {
         const k0 = key(x, z);
         if (state.claimed.has(k0) || !available.has(k0)) continue;
-        const ok = safeCanClaim({ x, z });
-        if (!ok) state.blocked.add(k0);
+        const res = canClaim({ x, z });
+        if (!res?.ok) {
+          state.blocked.set(k0, {
+            module: res?.module,
+            reason: res?.reason,
+            badge: moduleBadge(res?.module),
+          });
+        }
       }
     }
     const frag = document.createDocumentFragment();
@@ -270,7 +291,14 @@
         div.dataset.z = String(z);
 
         if (state.claimed.has(k0)) div.classList.add("claimed");
-        else if (state.blocked.has(k0)) div.classList.add("blocked");
+        else if (state.blocked.has(k0)) {
+          div.classList.add("blocked");
+          const info = state.blocked.get(k0);
+          const badge = info?.badge || moduleBadge(info?.module);
+          if (badge) div.textContent = badge;
+          const title = formatDetails(info);
+          if (title) div.title = title;
+        }
         else if (available.has(k0)) div.classList.add("available");
         frag.appendChild(div);
       }

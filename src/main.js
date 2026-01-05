@@ -72,7 +72,8 @@
     const raw = localStorage.getItem(SIDEBAR_KEY);
     const v = Number(raw);
     if (Number.isFinite(v)) {
-      document.documentElement.style.setProperty("--sidebarW", `${clamp(v, 280, 720)}px`);
+      const { min, max } = getSidebarLimits();
+      document.documentElement.style.setProperty("--sidebarW", `${clamp(v, min, max)}px`);
     }
   } catch {}
 
@@ -114,8 +115,6 @@
       return { ok: false, module: "RuntimeError", reason: msg };
     }
   };
-
-  const safeCanClaim = (cell) => evalCanClaim(cell).ok;
 
   const updateCellSize = () => {
     if (!els.gridScroll) return;
@@ -183,7 +182,7 @@
   }
 
   const rerender = () => {
-    app.render.render(state, els, safeCanClaim);
+    app.render.render(state, els, evalCanClaim);
     updateCellSize();
     updateSupportCalc(state?.ui?.probeCell || null);
   };

@@ -41,11 +41,11 @@
 
     <!-- 右：配置与信息（可滚动） -->
     <div class="sidebar sidePanel">
-      <div class="card">
+      <div class="card configCard">
         <div class="hdr">
           <div>
-            <div class="title">配置 / 规则</div>
-            <div class="sub">把配置放右侧，避免挡住底部交互区域</div>
+            <div class="title">规则配置</div>
+            <div class="sub">调整规则模块开关与阈值（仅作用于默认逻辑）</div>
           </div>
         </div>
         <div class="content">
@@ -60,7 +60,7 @@
                 <div class="miniCard">
                   <div class="miniHdr">
                     <div>
-                      <div class="miniTitle">基础规则：四邻接扩张（A）</div>
+                      <div class="miniTitle">A：基础规则四邻接扩张</div>
                       <div class="miniSub">只能从已有领地向上下左右扩张；完全不相邻的格子永远不能圈。你看到的蓝色“可圈地（邻接）”候选格，就是满足这条基础规则后，再交给下方模块继续筛选的结果。</div>
                     </div>
                   </div>
@@ -264,37 +264,6 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="hdr">
-          <div>
-            <div class="title">交互信息</div>
-            <div class="sub">悬停看原因；点击显示拒绝详情</div>
-          </div>
-          <div class="row">
-            <button id="copyMsgBtn" class="primary">复制消息</button>
-            <button id="clearMsgBtn">清空</button>
-          </div>
-        </div>
-        <div class="content">
-          <div class="inspector">
-            <div class="insHdr">
-              <div>
-                <div class="insTitle">指针信息</div>
-                <div class="insSub">悬停格子查看状态/原因</div>
-              </div>
-            </div>
-            <div class="insBody">
-              <div class="insRow"><div class="k">坐标</div><div class="v" id="hoverCoord">-</div></div>
-              <div class="insRow"><div class="k">状态</div><div class="v" id="hoverStatus">-</div></div>
-              <div class="insRow"><div class="k">原因</div><div class="v mono" id="hoverReason">-</div></div>
-            </div>
-          </div>
-
-          <div class="logBody">
-            <pre class="logText" id="msg">提示：点击格子尝试扩张；红色表示被规则拒绝（原因会显示在这里）。</pre>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
