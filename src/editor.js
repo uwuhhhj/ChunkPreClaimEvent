@@ -1,6 +1,12 @@
-import { neighbors4 } from "./utils.js";
+(() => {
+  const app = (window.ChunkPreClaimEvent = window.ChunkPreClaimEvent || {});
+  app.editor = app.editor || {};
+  const { neighbors4 } = app.utils;
 
-export const DEFAULT_CODE = `// 你只需要实现 canClaim(state, cell) 并返回 true/false。
+  app.editor.DEFAULT_CODE = `// 你只需要实现 canClaim(state, cell) 并返回：
+// - true / false
+// - 或 { ok: boolean, module?: string, reason?: string }（用于显示拒绝理由）
+// - 或直接返回字符串（表示拒绝理由）
 // state.claimed: Set，元素是 "x,z" 字符串
 // cell: {x, z}
 //
@@ -13,32 +19,32 @@ function canClaim(state, cell){
   for (const n of neighbors4(cell.x, cell.z)){
     if (state.claimed.has(n.x + "," + n.z)) return true;
   }
-  return false;
+  return { ok:false, module:"模块A", reason:"必须与已有领地 4 邻接" };
 }
 
 // 你也可以添加辅助函数（例如：九宫格密度、端点延伸限制等）`;
 
-export function compileCanClaimFromEditor(userCode) {
-  const factory = new Function(
-    "neighbors4",
-    `
-      "use strict";
-      ${userCode}
-      if (typeof canClaim !== "function") {
-        throw new Error("未找到 canClaim(state, cell) 函数");
-      }
-      return canClaim;
-    `,
-  );
-  return factory(neighbors4);
-}
+  app.editor.compileCanClaimFromEditor = (userCode) => {
+    const factory = new Function(
+      "neighbors4",
+      `
+        "use strict";
+        ${userCode}
+        if (typeof canClaim !== "function") {
+          throw new Error("未找到 canClaim(state, cell) 函数");
+        }
+        return canClaim;
+      `,
+    );
+    return factory(neighbors4);
+  };
 
-export function openPopupEditor(codeEl, setMsg) {
-  const win = window.open("", "LogicEditor", "width=700,height=700");
-  if (!win) {
-    setMsg("弹出窗口被浏览器拦截。");
-    return null;
-  }
+  app.editor.openPopupEditor = (codeEl, setMsg) => {
+    const win = window.open("", "LogicEditor", "width=700,height=700");
+    if (!win) {
+      setMsg("弹出窗口被浏览器拦截。");
+      return null;
+    }
 
   const html = `
 <!doctype html><html><head><meta charset="utf-8">
@@ -78,11 +84,12 @@ export function openPopupEditor(codeEl, setMsg) {
 <\/script>
 </body></html>`;
 
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
-  win.postMessage({ type: "INIT_CODE", code: codeEl.value }, "*");
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.postMessage({ type: "INIT_CODE", code: codeEl.value }, "*");
 
-  setMsg("已打开弹窗编辑器。");
-  return win;
-}
+    setMsg("已打开弹窗编辑器。");
+    return win;
+  };
+})();

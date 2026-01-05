@@ -1,16 +1,18 @@
-export const key = (x, z) => `${x},${z}`;
+(() => {
+  const app = (window.ChunkPreClaimEvent = window.ChunkPreClaimEvent || {});
+  app.utils = app.utils || {};
 
-export const parseKey = (k) => {
-  const [x, z] = k.split(",").map(Number);
-  return { x, z };
-};
+  app.utils.key = (x, z) => `${x},${z}`;
 
-export function neighbors4(x, z) {
-  return [
+  app.utils.parseKey = (k) => {
+    const [x, z] = k.split(",").map(Number);
+    return { x, z };
+  };
+
+  app.utils.neighbors4 = (x, z) => [
     { x: x + 1, z },
     { x: x - 1, z },
     { x, z: z + 1 },
     { x, z: z - 1 },
   ];
-}
-
+})();

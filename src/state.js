@@ -1,5 +1,8 @@
-export function createInitialState() {
-  return {
+(() => {
+  const app = (window.ChunkPreClaimEvent = window.ChunkPreClaimEvent || {});
+  app.state = app.state || {};
+
+  app.state.createInitialState = () => ({
     claimed: new Set(),
     blocked: new Set(),
     viewSize: 31,
@@ -30,6 +33,5 @@ export function createInitialState() {
       innerShare: 0,
       maxFilledSquare: 0,
     },
-  };
-}
-
+  });
+})();
