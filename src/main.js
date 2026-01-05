@@ -36,7 +36,9 @@
   };
 
   const setMsg = (s) => {
-    els.msg.textContent = s;
+    if (els.msg) {
+      els.msg.textContent = s;
+    }
   };
 
   const canClaimFn = app.rules.defaultCanClaim;

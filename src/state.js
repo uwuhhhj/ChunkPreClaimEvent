@@ -11,7 +11,7 @@
       requireTwoAdj: false,
       limitArm: true,
       maxArmLen: 6,
-      limitSupport: false,
+      limitSupport: true,
       supportM: 1,
       supportN: 5,
       limitPA: false,
